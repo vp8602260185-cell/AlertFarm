@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AlertFarm - Mandi Prices</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 300px; }
+        select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ddd; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Mandi Search</h2>
+    
+    <label>State</label>
+    <select id="state" onchange="loadDistricts()">
+        <option value="">Select State</option>
+    </select>
+
+    <label>District</label>
+    <select id="district" onchange="loadCommodities()" disabled>
+        <option value="">Select District</option>
+    </select>
+
+    <label>Commodity</label>
+    <select id="commodity" disabled>
+        <option value="">Select Commodity</option>
+    </select>
+</div>
+<button onclick="fetchFinalPrice()" style="width:100%; padding:10px; background:#28a745; color:white; border:none; cursor:pointer;">
+    Get Latest Price
+</button>
+
+<div id="result" style="margin-top: 20px;">
+    <table border="1" style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background:#eee;">
+                <th>Date</th>
+                <th>Market</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Modal</th>
+            </tr>
+        </thead>
+        <tbody id="priceTableBody"></tbody>
+    </table>
+</div>
+<script>
+    // 1. Load States on Page Load
+    window.onload = async () => {
+        const response = await fetch('/api/v1/mandi/states');
+        const states = await response.json();
+        const stateSelect = document.getElementById('state');
+        states.forEach(s => stateSelect.innerHTML += `<option value="${s}">${s}</option>`);
+    };
+
+    // 2. Load Districts when State changes
+    async function loadDistricts() {
+        const state = document.getElementById('state').value;
+        const distSelect = document.getElementById('district');
+        
+        distSelect.innerHTML = '<option value="">Select District</option>';
+        distSelect.disabled = !state;
+
+        if (state) {
+            const response = await fetch(`/api/v1/mandi/districts?state=${state}`);
+            const districts = await response.json();
+            districts.forEach(d => distSelect.innerHTML += `<option value="${d}">${d}</option>`);
+        }
+    }
+
+    // 3. Load Commodities when District changes
+    async function loadCommodities() {
+        const state = document.getElementById('state').value;
+        const district = document.getElementById('district').value;
+        const commSelect = document.getElementById('commodity');
+
+        commSelect.innerHTML = '<option value="">Select Commodity</option>';
+        commSelect.disabled = !district;
+
+        if (district) {
+            const response = await fetch(`/api/v1/mandi/commodities?state=${state}&district=${district}`);
+            const commodities = await response.json();
+            commodities.forEach(c => commSelect.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+    }
+    async function fetchFinalPrice() {
+        const state = document.getElementById('state').value;
+        const district = document.getElementById('district').value;
+        const commodity = document.getElementById('commodity').value;
+
+        if (!commodity) return alert("Please select all fields");
+
+        const response = await fetch(`/api/v1/mandi/commoditie_price?state=${state}&district=${district}&commodity=${commodity}`);
+        const data = await response.json();
+        
+        const tableBody = document.getElementById('priceTableBody');
+        tableBody.innerHTML = ""; // Clear old results
+
+        data.forEach(row => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${row.arrivalDate}</td>
+                    <td>${row.market}</td>
+                    <td>₹${row.minPrice}</td>
+                    <td>₹${row.maxPrice}</td>
+                    <td><strong>₹${row.modalPrice}</strong></td>
+                </tr>`;
+        });
+    }
+</script>
+
+</body>
+</html>

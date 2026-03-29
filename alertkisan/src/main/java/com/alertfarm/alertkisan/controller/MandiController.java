@@ -19,12 +19,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/v1/mandi")
 public class MandiController {
     
-    private final UserService userService;
     private final MandiService mandiService;
 
-    public MandiController(MandiService mandiService, UserService userService) {
+    public MandiController(MandiService mandiService) {
         this.mandiService = mandiService;
-        this.userService = userService;
     }
 
     @PostMapping("/")
@@ -43,4 +41,25 @@ public class MandiController {
         return mandiService.fetchTotalCount();
     }
 
+    @GetMapping("/states")
+    public List<String> getStates() {
+        return mandiService.findDistinctStates();
+    }
+
+    @GetMapping("/districts")
+    public List<String> getDistricts(@RequestParam String state) {
+        return mandiService.findDistinctDistrictsByState(state);
+    }
+
+    @GetMapping("/commodities")
+    public List<String> getCommodities(@RequestParam String state, @RequestParam String district) {
+        return mandiService.findDistinctCommoditiesByStateAndDistrict(state, district);
+    }
+    @GetMapping("/commoditie_price")
+    public List<MandiPrice> search(
+            @RequestParam String state, 
+            @RequestParam String district, 
+            @RequestParam String commodity) {
+        return mandiService.searchPrices(state, district, commodity);
+    }
 }

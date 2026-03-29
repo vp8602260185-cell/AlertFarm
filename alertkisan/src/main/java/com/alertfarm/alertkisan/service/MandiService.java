@@ -6,6 +6,8 @@ import com.alertfarm.alertkisan.repository.MandiRepository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -20,6 +22,12 @@ public class MandiService {
     @Value("${mandi.api.url}")
     String url;
 
+    @Value("${mandi.api.format}")
+    String format;
+
+    @Value("${mandi.api.limit}")
+    int limit;
+
     private final MandiRepository repository;
     private final RestTemplate restTemplate;
 
@@ -32,7 +40,7 @@ public class MandiService {
     public TotalRecords fetchTotalCount() {
         String url = this.url
                      + apiKey 
-                     + "&format=json"
+                     + "&format="+format
                      + "&limit=1";
 
         TotalRecords response = restTemplate.getForObject(url, TotalRecords.class);
@@ -44,13 +52,14 @@ public class MandiService {
         return response;
     }
 
-    public void fetchAndSaveMandiData() {
-        String url = "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=" 
+    private void fetchBatch(int offset) {
+        String url = this.url
                      + apiKey 
                      + "&format=json"
-                     + "&limit=10000";
-                    //  + "&filters[state]=Madhya Pradesh";
+                     + "&limit=" + limit
+                     + "&offset=" + offset;
 
+        // Use your main MandiApiResponse DTO here
         MandiApiResponse response = restTemplate.getForObject(url, MandiApiResponse.class);
         List<MandiPrice> entities = new ArrayList<>();
         if (response != null && response.records() != null) {
@@ -60,6 +69,15 @@ public class MandiService {
             }
         }
         repository.saveAll(entities);
+    }
+
+    public void fetchAndSaveMandiData() {
+        int total = fetchTotalCount().totalRecords();
+        System.out.println("Total Records: " + total);  
+        for (int offset = 0; offset < total; offset += limit) {
+            System.out.println("Fetching batch with offset: " + offset);
+            fetchBatch(offset);
+        }
     }
 
     private MandiPrice mapToEntity(MandiRecord record) {
@@ -78,5 +96,21 @@ public class MandiService {
 
     public List<MandiPrice> getAllMandiPrices() {
         return repository.findAll();
+    }
+
+    public List<String> findDistinctStates() {
+        return repository.findDistinctStates();
+    }
+
+    public List<String> findDistinctDistrictsByState(String state) {
+        return repository.findDistinctDistrictsByState(state);
+    }
+
+    public List<String> findDistinctCommoditiesByStateAndDistrict(String state,String district) {
+        return repository.findDistinctCommoditiesByStateAndDistrict(state, district);
+    }
+
+    public List<MandiPrice> searchPrices(String state, String district, String commodity) {
+    return repository.findByStateAndDistrictAndCommodityOrderByArrivalDateDesc(state, district, commodity);
     }
 }
