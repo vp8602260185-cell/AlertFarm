@@ -6,18 +6,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.alertfarm.alertkisan.models.MandiPrice;
+import com.alertfarm.alertkisan.models.MandiPriceId;
 
-public interface MandiRepository  extends JpaRepository<MandiPrice, Long> {
+public interface MandiRepository  extends JpaRepository<MandiPrice, MandiPriceId> {
 
-    @Query("SELECT DISTINCT m.state FROM MandiPrice m ORDER BY m.state")
+    @Query("SELECT DISTINCT m.id.state FROM MandiPrice m ORDER BY m.id.state")
     List<String> findDistinctStates();
 
-    @Query("SELECT DISTINCT m.district FROM MandiPrice m WHERE m.state = :state ORDER BY m.district")
+    @Query("SELECT DISTINCT m.id.district FROM MandiPrice m WHERE m.id.state = :state ORDER BY m.id.district")
     List<String> findDistinctDistrictsByState(String state);
 
-    @Query("SELECT DISTINCT m.commodity FROM MandiPrice m WHERE m.state = :state AND m.district = :district ORDER BY m.commodity")
+    @Query("SELECT DISTINCT m.id.commodity FROM MandiPrice m WHERE m.id.state = :state AND m.id.district = :district ORDER BY m.id.commodity")
     List<String> findDistinctCommoditiesByStateAndDistrict(String state, String district);
     
-    @Query("SELECT m FROM MandiPrice m WHERE m.state = :state AND m.district = :district AND m.commodity = :commodity ORDER BY m.arrivalDate DESC") 
+    @Query("SELECT m FROM MandiPrice m WHERE m.id.state = :state AND m.id.district = :district AND m.id.commodity = :commodity ORDER BY m.id.arrivalDate DESC") 
     List<MandiPrice> findByStateAndDistrictAndCommodityOrderByArrivalDateDesc(String state, String district, String commodity);
 } 

@@ -81,17 +81,13 @@ public class MandiService {
     }
 
     private MandiPrice mapToEntity(MandiRecord record) {
-        MandiPrice entity = new MandiPrice();
-        entity.setState(record.state());
-        entity.setDistrict(record.district());
-        entity.setMarket(record.market());
-        entity.setCommodity(record.commodity());
-        entity.setVariety(record.variety());
-        entity.setMinPrice(record.minPrice());
-        entity.setMaxPrice(record.maxPrice());
-        entity.setModalPrice(record.modalPrice());
-        entity.setArrivalDate(record.arrivalDate());
-        return entity;
+        return MandiPrice.builder()
+            .id(MandiPrice.createId(record)) // Set the composite key
+            .variety(record.variety())
+            .minPrice(record.minPrice())
+            .maxPrice(record.maxPrice())
+            .modalPrice(record.modalPrice())
+            .build();
     }
 
     public List<MandiPrice> getAllMandiPrices() {
