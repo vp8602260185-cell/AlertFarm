@@ -4,6 +4,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 import java.io.Serializable;
+import java.time.LocalDate;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Embeddable
 @Data
@@ -24,5 +27,5 @@ public class MandiPriceId implements Serializable {
     private String commodity;
 
     @Column(length = 20) // Dates like "29/03/2026" are short
-    private String arrivalDate;
+    private LocalDate arrivalDate;
 }

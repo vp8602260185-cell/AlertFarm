@@ -1,5 +1,8 @@
 package com.alertfarm.alertkisan.models;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import com.alertfarm.alertkisan.dto.MandiRecord;
 
 import jakarta.persistence.*;
@@ -22,6 +25,8 @@ public class MandiPrice {
 
     // Helper method to make mapping easier
     public static MandiPriceId createId(MandiRecord r) {
-        return new MandiPriceId(r.state(), r.district(), r.market(), r.commodity(), r.arrivalDate());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate date = LocalDate.parse(r.arrivalDate(), formatter);      
+        return new MandiPriceId(r.state(), r.district(), r.market(), r.commodity(),date);
     }
 }

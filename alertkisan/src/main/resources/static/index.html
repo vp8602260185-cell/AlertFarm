@@ -86,6 +86,9 @@
     <button onclick="fetchFinalPrice()" style="background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold;">
         Get Latest Price
     </button>
+    <button onclick="fetchSevenDayHistory(); showGraph();" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">
+    View 7-Day Trend
+    </button>
 </div>
 
 <div id="result" class="table-container">
@@ -102,6 +105,13 @@
         <tbody id="priceTableBody"></tbody>
     </table>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container" style="max-width: 600px; margin-top: 20px;">
+    <h3>Price Trend (Last 7 Days)</h3>
+    <canvas id="priceChart"></canvas>
+</div>
+
 <script>
     // 1. Load States on Page Load
     window.onload = async () => {
@@ -165,6 +175,84 @@
                 </tr>`;
         });
     }
+    async function fetchSevenDayHistory() {
+        const state = document.getElementById('state').value;
+        const district = document.getElementById('district').value;
+        const commodity = document.getElementById('commodity').value;
+
+        if (!commodity) return alert("Please select State, District, and Commodity first");
+
+        // 1. Call your new history endpoint
+        const response = await fetch(`/api/v1/mandi/history?state=${state}&district=${district}&commodity=${commodity}`);
+        const data = await response.json();
+        
+        const tableBody = document.getElementById('priceTableBody');
+        tableBody.innerHTML = ""; 
+
+        if (data.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No history found in database</td></tr>";
+            return;
+        }
+
+        // 2. Populate the table with the 7-day list
+        data.forEach(row => {
+            // Note: Since we use @EmbeddedId, we access fields via row.id
+            // We also format the LocalDate string slightly for better reading
+            const displayDate = new Date(row.id.arrivalDate).toLocaleDateString('en-IN');
+            
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${displayDate}</td>
+                    <td>${row.id.market}</td>
+                    <td>₹${row.minPrice}</td>
+                    <td>₹${row.maxPrice}</td>
+                    <td style="background: #e8f5e9;"><strong>₹${row.modalPrice}</strong></td>
+                </tr>`;
+        });
+    }
+
+let priceChart; // Global variable to store the chart instance
+async function showGraph() {
+    const state = document.getElementById('state').value;
+    const district = document.getElementById('district').value;
+    const commodity = document.getElementById('commodity').value;
+
+    if (!commodity) return alert("Select all fields first");
+
+    const response = await fetch(`/api/v1/mandi/history?state=${state}&district=${district}&commodity=${commodity}&days=7`);
+    const data = await response.json();
+
+    // Prepare data for the graph (X = Date, Y = Modal Price)
+    const labels = data.map(row => row.id.arrivalDate).reverse(); // Reverse for chronological order
+    const prices = data.map(row => row.modalPrice).reverse();
+    console.log("Graph Data:", labels, prices); // Debugging log
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    
+    // If a chart already exists, destroy it before creating a new one
+    if (priceChart) priceChart.destroy();
+
+    priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Modal Price (₹)',
+                data: prices,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3 // Makes the line smooth
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: false } // Better for seeing small price fluctuations
+            }
+        }
+    });
+}
 </script>
 
 </body>

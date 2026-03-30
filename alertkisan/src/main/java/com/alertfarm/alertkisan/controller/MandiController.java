@@ -60,6 +60,19 @@ public class MandiController {
             @RequestParam String state, 
             @RequestParam String district, 
             @RequestParam String commodity) {
-        return mandiService.searchPrices(state, district, commodity);
+        return mandiService.getLatestMandiPrices(state, district, commodity);
     }
+
+    @GetMapping("/history")
+    public List<MandiPrice> getRecentHistory(
+            @RequestParam String state, 
+            @RequestParam String district, 
+            @RequestParam String commodity,
+            @RequestParam(required = false) Integer days) {
+        if(days == null || days <= 0) {
+            days = 7;
+        }
+        return mandiService.getRecentHistory(state, district, commodity, days);
+    }
+    
 }

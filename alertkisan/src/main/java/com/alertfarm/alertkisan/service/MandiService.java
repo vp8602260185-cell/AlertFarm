@@ -5,13 +5,18 @@ import com.alertfarm.alertkisan.models.MandiPrice;
 import com.alertfarm.alertkisan.repository.MandiRepository;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 @Service
 public class MandiService {
@@ -71,6 +76,7 @@ public class MandiService {
         repository.saveAll(entities);
     }
 
+    @Scheduled(cron = "0 0 10 * * *")
     public void fetchAndSaveMandiData() {
         int total = fetchTotalCount().totalRecords();
         System.out.println("Total Records: " + total);  
@@ -107,6 +113,42 @@ public class MandiService {
     }
 
     public List<MandiPrice> searchPrices(String state, String district, String commodity) {
-    return repository.findByStateAndDistrictAndCommodityOrderByArrivalDateDesc(state, district, commodity);
+        return repository.findByStateAndDistrictAndCommodityOrderByArrivalDateDesc(state, district, commodity);
+    }
+
+    public List<MandiPrice> getLatestMandiPrices(String state, String district, String commodity) {
+
+        LocalDate latestDate = repository.findLatestArrivalDate(state, district, commodity);
+
+        if (latestDate != null) {
+            System.out.println("Found latest data for date: "+latestDate);
+            return repository.findBySpecificDate(state, district, commodity, latestDate);
+        }
+        // log.warn("No data found in DB. Consider triggering an on-demand API fetch.");
+        return new ArrayList<>();
+    }
+
+    public List<MandiPrice> getRecentHistory(String state, String district, String commodity,Integer days) {
+        List<LocalDate> dates=repository.findLastNAvailableDates(state, district, commodity, PageRequest.of(0, 7));
+        if (dates.isEmpty()) return new ArrayList<>();
+        
+        List<MandiPrice> allRecords = repository.findHistory(state, district, commodity, dates);
+
+        // 3. Group by Date and keep the MAX Modal Price record
+        // Using TreeMap with Collections.reverseOrder() to keep newest dates at the top
+        Map<LocalDate, MandiPrice> bestPricesMap = new TreeMap<>(Collections.reverseOrder());
+
+        for (MandiPrice current : allRecords) {
+            LocalDate date = current.getId().getArrivalDate();
+            if (!bestPricesMap.containsKey(date)) {
+                bestPricesMap.put(date, current);
+            } else {
+                MandiPrice existing = bestPricesMap.get(date);
+                if (current.getModalPrice() > existing.getModalPrice()) {
+                    bestPricesMap.put(date, current);
+                }
+            }
+        }
+        return new ArrayList<>(bestPricesMap.values());
     }
 }
