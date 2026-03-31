@@ -6,7 +6,6 @@ import lombok.*;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-import org.springframework.format.annotation.DateTimeFormat;
 
 @Embeddable
 @Data

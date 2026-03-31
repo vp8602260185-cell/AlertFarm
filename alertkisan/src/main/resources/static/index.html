@@ -86,9 +86,16 @@
     <button onclick="fetchFinalPrice()" style="background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold;">
         Get Latest Price
     </button>
-    <button onclick="fetchSevenDayHistory(); showGraph();" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">
-    View 7-Day Trend
+    <button onclick="savePriceAlert()" style="background:#ffc107; color:black; font-weight:bold; border:none;">
+        🔔 Set My Alert
     </button>
+</div>
+
+<div class="container" style="max-width: 600px; display: flex; gap: 5px; justify-content: center;">
+    <button onclick="fetchSevenDayHistory(); showGraph(7);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">7 Days</button>
+    <button onclick="fetchSevenDayHistory(); showGraph(30);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">1 Month</button>
+    <button onclick="fetchSevenDayHistory(); showGraph(90);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">3 Month</button>
+    <button onclick="fetchSevenDayHistory(); showGraph(365);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">1 Year</button>
 </div>
 
 <div id="result" class="table-container">
@@ -211,48 +218,75 @@
         });
     }
 
-let priceChart; // Global variable to store the chart instance
-async function showGraph() {
-    const state = document.getElementById('state').value;
-    const district = document.getElementById('district').value;
-    const commodity = document.getElementById('commodity').value;
+    let priceChart; // Global variable to store the chart instance
+    async function showGraph(days = 7) {
+        const state = document.getElementById('state').value;
+        const district = document.getElementById('district').value;
+        const commodity = document.getElementById('commodity').value;
 
-    if (!commodity) return alert("Select all fields first");
+        if (!commodity) return alert("Select all fields first");
 
-    const response = await fetch(`/api/v1/mandi/history?state=${state}&district=${district}&commodity=${commodity}&days=7`);
-    const data = await response.json();
+        // Pass the 'days' parameter to your Java API
+        const response = await fetch(`/api/v1/mandi/history?state=${state}&district=${district}&commodity=${commodity}&days=${days}`);
+        const data = await response.json();
 
-    // Prepare data for the graph (X = Date, Y = Modal Price)
-    const labels = data.map(row => row.id.arrivalDate).reverse(); // Reverse for chronological order
-    const prices = data.map(row => row.modalPrice).reverse();
-    console.log("Graph Data:", labels, prices); // Debugging log
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    
-    // If a chart already exists, destroy it before creating a new one
-    if (priceChart) priceChart.destroy();
+        const labels = data.map(row => row.id.arrivalDate).reverse();
+        const prices = data.map(row => row.modalPrice).reverse();
 
-    priceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Modal Price (₹)',
-                data: prices,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.3 // Makes the line smooth
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: false } // Better for seeing small price fluctuations
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        if (priceChart) priceChart.destroy();
+
+        priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Price Trend (₹)',
+                    data: prices,
+                    borderColor: '#28a745',
+                    borderWidth: days > 90 ? 1 : 3, // Thinner line for 1Y view
+                    pointRadius: days > 90 ? 0 : 3, // Hide dots for 1Y to look like a stock chart
+                    fill: true,
+                    backgroundColor: 'rgba(40, 167, 69, 0.05)',
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { ticks: { maxTicksLimit: 10 } }, // Keeps the X-axis clean
+                    y: { beginAtZero: false }
+                }
             }
+        });
+    }
+
+    async function savePriceAlert() {
+        const state = document.getElementById('state').value;
+        const district = document.getElementById('district').value;
+        const commodity = document.getElementById('commodity').value;
+
+        if (!commodity) return alert("Please select all fields");
+
+        const alertData = {
+            user: { id: 1 }, 
+            state: state,
+            district: district,
+            commodity: commodity
+        };
+
+        const response = await fetch('/api/v1/alert/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(alertData)
+        });
+
+        if (response.ok) {
+            alert("Price alert set successfully!");
+        } else {
+            alert("Failed to set price alert.");
         }
-    });
-}
+    }
 </script>
 
 </body>
