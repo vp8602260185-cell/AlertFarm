@@ -77,7 +77,7 @@
     </select>
 
     <label>Commodity</label>
-    <select id="commodity" disabled>
+    <select id="commodity" onchange="fetchSevenDayHistory(); showGraph(7);" disabled>
         <option value="">Select Commodity</option>
     </select>
 </div>
@@ -93,9 +93,9 @@
 
 <div class="container" style="max-width: 600px; display: flex; gap: 5px; justify-content: center;">
     <button onclick="fetchSevenDayHistory(); showGraph(7);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">7 Days</button>
-    <button onclick="fetchSevenDayHistory(); showGraph(30);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">1 Month</button>
-    <button onclick="fetchSevenDayHistory(); showGraph(90);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">3 Month</button>
-    <button onclick="fetchSevenDayHistory(); showGraph(365);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">1 Year</button>
+    <button onclick="fetchSevenDayHistory(30); showGraph(30);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">1 Month</button>
+    <button onclick="fetchSevenDayHistory(90); showGraph(90);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">3 Month</button>
+    <button onclick="fetchSevenDayHistory(365); showGraph(365);" style="width:100%; padding:10px; background:#007bff; color:white; border:none; cursor:pointer; margin-top:10px;">1 Year</button>
 </div>
 
 <div id="result" class="table-container">
@@ -103,10 +103,10 @@
         <thead>
             <tr style="background:#f8f9fa;">
                 <th>Date</th>
-                <th>Market</th>
                 <th>Min</th>
                 <th>Max</th>
                 <th>Modal</th>
+                <th>Market</th>
             </tr>
         </thead>
         <tbody id="priceTableBody"></tbody>
@@ -115,7 +115,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container" style="max-width: 600px; margin-top: 20px;">
-    <h3>Price Trend (Last 7 Days)</h3>
+    <h3>Price Trend </h3>
     <canvas id="priceChart"></canvas>
 </div>
 
@@ -175,14 +175,14 @@
             tableBody.innerHTML += `
                 <tr>
                     <td>${row.id.arrivalDate}</td>
-                    <td>${row.id.market}</td>
                     <td>₹${row.minPrice}</td>
                     <td>₹${row.maxPrice}</td>
                     <td><strong>₹${row.modalPrice}</strong></td>
+                    <td>${row.id.market}</td>
                 </tr>`;
         });
     }
-    async function fetchSevenDayHistory() {
+    async function fetchSevenDayHistory(days=7) {
         const state = document.getElementById('state').value;
         const district = document.getElementById('district').value;
         const commodity = document.getElementById('commodity').value;
@@ -190,7 +190,7 @@
         if (!commodity) return alert("Please select State, District, and Commodity first");
 
         // 1. Call your new history endpoint
-        const response = await fetch(`/api/v1/mandi/history?state=${state}&district=${district}&commodity=${commodity}`);
+        const response = await fetch(`/api/v1/mandi/history?state=${state}&district=${district}&commodity=${commodity}&days=${days}`);
         const data = await response.json();
         
         const tableBody = document.getElementById('priceTableBody');
@@ -210,10 +210,10 @@
             tableBody.innerHTML += `
                 <tr>
                     <td>${displayDate}</td>
-                    <td>${row.id.market}</td>
                     <td>₹${row.minPrice}</td>
                     <td>₹${row.maxPrice}</td>
                     <td style="background: #e8f5e9;"><strong>₹${row.modalPrice}</strong></td>
+                    <td>${row.id.market}</td>
                 </tr>`;
         });
     }

@@ -25,9 +25,6 @@ public class PriceAlertController {
     @Autowired
     private PriceAlertService priceAlertService;
 
-    public PriceAlertController(PriceAlertService priceAlertService) {
-        this.priceAlertService = priceAlertService;
-    }
 
     @PostMapping("/save")
     public PriceAlert saveAlert(@RequestBody PriceAlert alert) {

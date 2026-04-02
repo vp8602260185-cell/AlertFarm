@@ -11,6 +11,7 @@ import com.alertfarm.alertkisan.service.MandiService;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -19,11 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/v1/mandi")
 public class MandiController {
     
-    private final MandiService mandiService;
-
-    public MandiController(MandiService mandiService) {
-        this.mandiService = mandiService;
-    }
+    @Autowired
+    private MandiService mandiService;
 
     @PostMapping("/")
     public String postMethodName() {

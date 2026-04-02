@@ -4,7 +4,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
-import com.alertfarm.alertkisan.repository.UserRepository;
 import com.alertfarm.alertkisan.service.UserService;
 import com.alertfarm.alertkisan.models.User;
 
