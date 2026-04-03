@@ -173,27 +173,23 @@
             console.error("Failed to load states:", err);
         }
 
-        // 2. Now check localStorage for preferences
-        const cachedState = localStorage.getItem('alertkisan_state');
-        const cachedDistrict = localStorage.getItem('alertkisan_district');
-        const cachedCommodity = localStorage.getItem('alertkisan_commodity');
+        // 2. Check URL Params first, then fallback to localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        const state = urlParams.get('state') || localStorage.getItem('alertkisan_state');
+        const district = urlParams.get('district') || localStorage.getItem('alertkisan_district');
+        const commodity = urlParams.get('commodity') || localStorage.getItem('alertkisan_commodity');
 
-        if (cachedState) {
-            stateSelect.value = cachedState;
+        if (state) {
+            document.getElementById('state').value = state;
+            await loadDistricts();
             
-            // 3. We must AWAIT the districts before we can select the cached one
-            await loadDistricts(); 
-            
-            if (cachedDistrict) {
-                document.getElementById('district').value = cachedDistrict;
-                
-                // 4. AWAIT the commodities
+            if (district) {
+                document.getElementById('district').value = district;
                 await loadCommodities();
                 
-                if (cachedCommodity) {
-                    document.getElementById('commodity').value = cachedCommodity;
-                    
-                    // 5. Finally, trigger the data fetch and graph automatically!
+                if (commodity) {
+                    document.getElementById('commodity').value = commodity;
                     fetchFinalPrice();
                     showGraph(7);
                 }

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Database Service
+  mandi-db:
+    image: mysql:latest
+    container_name: mandi-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: mandi_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mandi-data:/var/lib/mysql
+    networks:
+      - mandi-network
+
+  # Spring Boot App Service
+  mandi-app:
+    image: alertkisan:latest
+    container_name: mandi-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mandi-db:3306/mandi_db?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root1234
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - mandi-db
+    networks:
+      - mandi-network
+
+networks:
+  mandi-network:
+    driver: bridge
+
+volumes:
+  mandi-data:

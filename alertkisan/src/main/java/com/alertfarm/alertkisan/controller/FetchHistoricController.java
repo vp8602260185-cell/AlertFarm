@@ -13,17 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.alertfarm.alertkisan.dto.TotalRecords;
 import com.alertfarm.alertkisan.service.FetchHistoricService;
-import com.alertfarm.alertkisan.service.MandiService;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
 @RequestMapping("/api/v1/fetch_historic")
 @Slf4j
 public class FetchHistoricController {
-
-    @Autowired
-    private  MandiService mandiService;
 
     @Autowired
     private FetchHistoricService fetchHistoricService;
@@ -44,7 +39,7 @@ public class FetchHistoricController {
     }
 
     @PostMapping("/storeForAll")
-    @EventListener(ApplicationReadyEvent.class)
+    // @EventListener(ApplicationReadyEvent.class)
     public String storeHistoricForAll() {
         int total_records=fetchHistoricService.storeHistoricRecordForAll();
         log.info("Total Records Fetched and Stored for All: {}", total_records);
