@@ -10,7 +10,8 @@ public class AlertkisanApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(AlertkisanApplication.class, args);
-		System.out.println("AlertKisan Application Started Successfully!");
+		org.slf4j.LoggerFactory.getLogger(AlertkisanApplication.class).info("AlertKisan Application Started Successfully!");
+		
 	}
 
 }

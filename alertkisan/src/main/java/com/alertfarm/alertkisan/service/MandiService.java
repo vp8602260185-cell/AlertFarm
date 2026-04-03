@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestTemplate;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Service
+@Slf4j
 public class MandiService {
 
     @Value("${mandi.api.key}")
@@ -52,9 +54,9 @@ public class MandiService {
 
         TotalRecords response = restTemplate.getForObject(url, TotalRecords.class);
         if (response != null) {
-            System.out.println("Total Records: " + response.totalRecords());
+            log.info("Total Records: {}", response.totalRecords());
         } else {
-            System.out.println("Failed to fetch total records.");
+            log.warn("Failed to fetch total records.");
         }
         return response;
     }
@@ -81,9 +83,9 @@ public class MandiService {
     @Scheduled(cron = "0 0 10 * * *")
     public void fetchAndSaveMandiData() {
         int total = fetchTotalCount().totalRecords();
-        System.out.println("Total Records: " + total);  
+        log.info("Total Records: {}", total);
         for (int offset = 0; offset < total; offset += limit) {
-            System.out.println("Fetching batch with offset: " + offset);
+            log.info("Fetching batch with offset: {}", offset);
             fetchBatch(offset);
         }
     }
@@ -124,7 +126,7 @@ public class MandiService {
         LocalDate latestDate = repository.findLatestArrivalDate(state, district, commodity);
 
         if (latestDate != null) {
-            System.out.println("Found latest data for date: "+latestDate);
+            log.info("Found latest data for date: {}", latestDate);
             return repository.findBySpecificDate(state, district, commodity, latestDate);
         }
         // log.warn("No data found in DB. Consider triggering an on-demand API fetch.");
@@ -147,7 +149,7 @@ public class MandiService {
                 bestPricesMap.put(date, current);
             } else {
                 MandiPrice existing = bestPricesMap.get(date);
-                if (current.getModalPrice() > existing.getModalPrice()) {
+                if (current.getMaxPrice() > existing.getMaxPrice()) {
                     bestPricesMap.put(date, current);
                 }
             }

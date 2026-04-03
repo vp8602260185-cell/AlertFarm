@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 import com.alertfarm.alertkisan.dto.MandiApiResponse;
 import com.alertfarm.alertkisan.dto.MandiRecord;
@@ -19,6 +20,7 @@ import com.alertfarm.alertkisan.repository.MandiRepository;
 import org.springframework.web.client.RestTemplate;
 
 @Service
+@Slf4j
 public class FetchHistoricService {
     private final MetadataRepository metadataRepository;
 
@@ -61,11 +63,11 @@ public class FetchHistoricService {
         try {
             TotalRecords response = restTemplate.getForObject(finalUrl, TotalRecords.class);
             if (response != null) {
-                System.out.println("Filtered Total Records for " + commodity + ": " + response.totalRecords());
+                log.info("Filtered Total Records for {}: {}", commodity, response.totalRecords());
                 return response;
             }
         } catch (Exception e) {
-            System.err.println("Error fetching filtered count: " + e.getMessage());
+            log.error("Error fetching filtered count: {}", e.getMessage());
         }
         
         return null;
@@ -104,10 +106,10 @@ public class FetchHistoricService {
         
     public List<MandiPrice>fetchAndSaveMandiData(String state, String district, String commodity) {
         int total = fetchTotalCount(state,district,commodity).totalRecords();
-        System.out.println("Total Records: " + total);  
+        log.info("Total Records: {}", total);
         List<MandiPrice> allEntities = new ArrayList<>();
         for (int offset = 0; offset < total; offset += limit) {
-            System.out.println("Fetching batch with offset: " + offset);
+            log.info("Fetching batch with offset: {}", offset);
             allEntities.addAll(fetchBatch(offset,state,district,commodity));
         }
         return allEntities;
@@ -115,10 +117,10 @@ public class FetchHistoricService {
 
 
     public int countTotalRecords(String state, String district, String commodity) {
-        TotalRecords data=fetchTotalCount(state, district, commodity);
-        int total_records=data.totalRecords();
-        System.out.println("Total Records for " + commodity + " in " + district + ", " + state + ": " + total_records);
-        return total_records;
+    TotalRecords data=fetchTotalCount(state, district, commodity);
+    int total_records=data.totalRecords();
+    log.info("Total Records for {} in {}, {}: {}", commodity, district, state, total_records);
+    return total_records;
     }
 
     public int storeHistoricRecordForAll(){
@@ -129,28 +131,24 @@ public class FetchHistoricService {
             for(String district: districts){
                 List<String> commodities=mandiService.findDistinctCommoditiesByStateAndDistrict(state, district);
                 for(String commodity: commodities){
-                    
                     Boolean isPresent=metadataRepository.findByStateDistrictCommodity(state, district, commodity);
                     if(isPresent){
-                        System.out.println("Data already fetched for " + commodity + " in " + district + ", " + state);
+                        log.info("Data already fetched for {} in {}, {}", commodity, district, state);
                         continue;
                     }
-
                     TotalRecords data=fetchTotalCount(state, district, commodity);
-                    System.out.println("Total Records for " + commodity + " in " + district + ", " + state + ": " + data.totalRecords());
+                    log.info("Total Records for {} in {}, {}: {}", commodity, district, state, data.totalRecords());
                     if(data.totalRecords()==0){
-                        System.out.println("No records found for " + commodity + " in " + district + ", " + state);
+                        log.info("No records found for {} in {}, {}", commodity, district, state);
                         continue;
                     }
                     List<MandiPrice> mandi_price=fetchAndSaveMandiData(state, district, commodity);
                     processMandiData(state, district, commodity, data, mandi_price);
-
                     total_records+=data.totalRecords();
-                    
                 }
             }
         }
-        System.out.println("Total Records in the Database: " + total_records);
+        log.info("Total Records in the Database: {}", total_records);
         return total_records;
     }
     
@@ -166,16 +164,14 @@ public class FetchHistoricService {
                     .district(district)
                     .commodity(commodity)
                     .build();
-            
             metadataRepository.save(entity);
-
             // 2. Fetch and Save the actual data
             // If this method fails, the Metadata record above will be DELETED (rolled back)
             mandiRepository.saveAll(mandi_price);
-            System.out.println("Sleep for 5 seconds to simulate delay and test rollback...");
+            log.info("Sleep for 5 seconds to simulate delay and test rollback...");
             Thread.sleep(5000);  
         } catch (Exception e) {
-            System.out.println("Failed to sync data for {}. Rolling back transaction."+commodity+e);
+            log.error("Failed to sync data for {}. Rolling back transaction. {}", commodity, e);
             // We re-throw the exception to trigger the rollback
             throw new RuntimeException(e);
         }
