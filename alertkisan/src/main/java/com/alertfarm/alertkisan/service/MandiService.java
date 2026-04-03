@@ -59,29 +59,6 @@ public class MandiService {
         return response;
     }
 
-    public TotalRecords fetchTotalCount(String state, String district, String commodity) {
-        // Use UriComponentsBuilder to handle spaces and special characters safely
-        String finalUrl = this.historicalUrl
-                        + apiKey 
-                        + "&format="+format
-                        + "&limit=1"
-                        + "&filters[state]="+state
-                        + "&filters[district]="+district
-                        + "&filters[commodity]="+commodity;
-
-        try {
-            TotalRecords response = restTemplate.getForObject(finalUrl, TotalRecords.class);
-            if (response != null) {
-                System.out.println("Filtered Total Records for " + commodity + ": " + response.totalRecords());
-                return response;
-            }
-        } catch (Exception e) {
-            System.err.println("Error fetching filtered count: " + e.getMessage());
-        }
-        
-        return null;
-    }
-
     private void fetchBatch(int offset) {
         String url = this.url
                      + apiKey 
@@ -100,26 +77,7 @@ public class MandiService {
         }
         repository.saveAll(entities);
     }
-    private void fetchBatch(int offset,String state, String district, String commodity) {
-        String url = this.historicalUrl
-                        + apiKey 
-                        + "&format=json"
-                        + "&limit=" + limit
-                        + "&offset=" + offset
-                        + "&filters[state]="+state
-                        + "&filters[district]="+district
-                        + "&filters[commodity]="+commodity;
-        // Use your main MandiApiResponse DTO here
-        MandiApiResponse response = restTemplate.getForObject(url, MandiApiResponse.class);
-        List<MandiPrice> entities = new ArrayList<>();
-        if (response != null && response.records() != null) {
-            for (MandiRecord record : response.records()) {
-                MandiPrice entity = this.mapToEntity(record);
-                entities.add(entity);
-            }
-        }
-        repository.saveAll(entities);
-    }
+
     @Scheduled(cron = "0 0 10 * * *")
     public void fetchAndSaveMandiData() {
         int total = fetchTotalCount().totalRecords();
@@ -130,15 +88,6 @@ public class MandiService {
         }
     }
     
-    
-    public void fetchAndSaveMandiData(String state, String district, String commodity) {
-        int total = fetchTotalCount(state,district,commodity).totalRecords();
-        System.out.println("Total Records: " + total);  
-        for (int offset = 0; offset < total; offset += limit) {
-            System.out.println("Fetching batch with offset: " + offset);
-            fetchBatch(offset,state,district,commodity);
-        }
-    }
     
     private MandiPrice mapToEntity(MandiRecord record) {
         return MandiPrice.builder()
