@@ -135,15 +135,16 @@ public class FetchHistoricService {
             for(String district: districts){
                 List<String> commodities=mandiService.findDistinctCommoditiesByStateAndDistrict(state, district);
                 for(String commodity: commodities){
+                    log.info("fetching for {} in {}, {}", commodity, district, state);
                     Boolean isPresent=metadataRepository.findByStateDistrictCommodity(state, district, commodity);
                     if(isPresent){
-                        log.info("Data already fetched for {} in {}, {}", commodity, district, state);
+                        log.debug("Data already fetched for {} in {}, {}", commodity, district, state);
                         continue;
                     }
                     TotalRecords data=fetchTotalCount(state, district, commodity);
-                    log.info("Total Records for {} in {}, {}: {}", commodity, district, state, data);
+                    log.debug("Total Records for {} in {}, {}: {}", commodity, district, state, data);
                     if(data==null || data.totalRecords()==0){
-                        log.info("No records found for {} in {}, {}", commodity, district, state);
+                        log.debug("No records found for {} in {}, {}", commodity, district, state);
                         continue;
                     }
                     List<MandiPrice> mandi_price=fetchAndSaveMandiData(state, district, commodity);
@@ -172,7 +173,7 @@ public class FetchHistoricService {
             // 2. Fetch and Save the actual data
             // If this method fails, the Metadata record above will be DELETED (rolled back)
             mandiRepository.saveAll(mandi_price);
-            log.info("Sleep for 5 seconds to simulate delay and test rollback...");
+            log.debug("Sleep for 5 seconds to simulate delay and test rollback...");
             Thread.sleep(5000);  
         } catch (Exception e) {
             log.error("Failed to sync data for {}. Rolling back transaction. {}", commodity, e);
