@@ -37,11 +37,24 @@ services:
       ports:
         - "80:80"
         - "443:443" 
+      volumes:
+      # Mount certificates so Nginx can read them
+        - ./certbot/conf:/etc/letsencrypt:ro
+        - ./certbot/www:/var/www/certbot:ro
       depends_on:
         - mandi-app
       networks:
         - mandi-network
 
+  # // Certbot Service for SSL Certificates 
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    networks:
+      - mandi-network
+  
 networks:
   mandi-network:
     driver: bridge
