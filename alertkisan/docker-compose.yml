@@ -29,6 +29,19 @@ services:
     networks:
       - mandi-network
 
+  nginx:
+      build:
+        context: .
+        dockerfile: Dockerfile.nginx
+      container_name: nginx-proxy
+      ports:
+        - "80:80"
+        - "443:443" 
+      depends_on:
+        - mandi-app
+      networks:
+        - mandi-network
+
 networks:
   mandi-network:
     driver: bridge
