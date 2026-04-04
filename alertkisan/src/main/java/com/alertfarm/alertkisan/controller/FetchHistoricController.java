@@ -39,7 +39,7 @@ public class FetchHistoricController {
     }
 
     @PostMapping("/storeForAll")
-    @EventListener(ApplicationReadyEvent.class)
+    // @EventListener(ApplicationReadyEvent.class)
     public String storeHistoricForAll() {
         int total_records=fetchHistoricService.storeHistoricRecordForAll();
         log.info("Total Records Fetched and Stored for All: {}", total_records);

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -123,6 +124,9 @@ public class FetchHistoricService {
     return total_records;
     }
 
+    // 21,600,000 ms = 6 hours
+    // initialDelay = 30000 ms (starts 30 seconds after app boot)
+    @Scheduled(fixedDelay = 21600000, initialDelay = 30000)
     public int storeHistoricRecordForAll(){
         int total_records=0;
         List<String> states=mandiService.findDistinctStates();
@@ -137,8 +141,8 @@ public class FetchHistoricService {
                         continue;
                     }
                     TotalRecords data=fetchTotalCount(state, district, commodity);
-                    log.info("Total Records for {} in {}, {}: {}", commodity, district, state, data.totalRecords());
-                    if(data.totalRecords()==0){
+                    log.info("Total Records for {} in {}, {}: {}", commodity, district, state, data);
+                    if(data==null || data.totalRecords()==0){
                         log.info("No records found for {} in {}, {}", commodity, district, state);
                         continue;
                     }
